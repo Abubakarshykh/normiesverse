@@ -1,4 +1,5 @@
-import { fetchNormie, fetchPersonaPreview, fetchNormies, FACTION_COLORS, RARITY_ORDER } from '@/lib/api';
+import { FACTION_COLORS, RARITY_ORDER } from '@/lib/api';
+import { getServerNormie, getServerNormies } from '@/lib/data';
 import PixelCanvas from '@/components/PixelCanvas';
 import AIPersonaTerminal from '@/components/AIPersonaTerminal';
 import { notFound } from 'next/navigation';
@@ -13,13 +14,14 @@ const RARITY_COLORS: Record<string, string> = {
 };
 
 // Pre-render all normie pages at build time
-export async function generateStaticParams() {
-  const normies = await fetchNormies();
+export function generateStaticParams() {
+  const normies = getServerNormies();
   return normies.map((n) => ({ id: n.id }));
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const normie = await fetchNormie(params.id);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const normie = getServerNormie(id);
   if (!normie) return { title: 'Normie Not Found' };
   return {
     title: `${normie.name} — NormiesVerse`,
@@ -27,11 +29,18 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   };
 }
 
-export default async function NormieDetailPage({ params }: { params: { id: string } }) {
-  const normie = await fetchNormie(params.id);
+export default async function NormieDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const normie = getServerNormie(id);
   if (!normie) notFound();
 
-  const persona = await fetchPersonaPreview(params.id);
+  const persona = normie ? {
+    id: normie.id,
+    name: normie.name,
+    systemPrompt: normie.persona.systemPrompt,
+    behavior: normie.persona.behavior,
+    previewText: normie.persona.previewText,
+  } : null;
   const factionColor = FACTION_COLORS[normie.faction] ?? '#ff0080';
   const rarityColor = RARITY_COLORS[normie.rarity] ?? '#888';
   const rarityIndex = RARITY_ORDER.indexOf(normie.rarity);

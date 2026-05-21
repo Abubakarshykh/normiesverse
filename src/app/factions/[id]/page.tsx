@@ -1,4 +1,5 @@
-import { fetchNormies, fetchNormiesByFaction, FACTION_COLORS, RARITY_ORDER } from '@/lib/api';
+import { getServerNormies, getServerNormiesByFaction, getServerFactions } from '@/lib/data';
+import { FACTION_COLORS, RARITY_ORDER } from '@/lib/api';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Zap, Users, Star } from 'lucide-react';
@@ -6,10 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Metadata } from 'next';
 
-export async function generateStaticParams() {
-  const normies = await fetchNormies();
-  const factions = [...new Set(normies.map((n) => n.faction.toLowerCase()))];
-  return factions.map((id) => ({ id }));
+export function generateStaticParams() {
+  const factions = getServerFactions();
+  return factions.map((f) => ({ id: f.toLowerCase() }));
 }
 
 const FACTION_LORE: Record<string, { tagline: string; lore: string; emoji: string; traits: string[] }> = {
@@ -25,19 +25,21 @@ const RARITY_COLORS: Record<string, string> = {
   Common: '#888', Uncommon: '#4ade80', Rare: '#60a5fa', Epic: '#c084fc', Legendary: '#fbbf24',
 };
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const lore = FACTION_LORE[params.id.toLowerCase()];
-  const name = params.id.charAt(0).toUpperCase() + params.id.slice(1);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const lore = FACTION_LORE[id.toLowerCase()];
+  const name = id.charAt(0).toUpperCase() + id.slice(1);
   return {
     title: `${name} Faction — NormiesVerse`,
     description: lore?.lore?.slice(0, 120) ?? `Explore the ${name} faction.`,
   };
 }
 
-export default async function FactionPage({ params }: { params: { id: string } }) {
-  const factionKey = params.id.toLowerCase();
+export default async function FactionPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const factionKey = id.toLowerCase();
   const factionName = factionKey.charAt(0).toUpperCase() + factionKey.slice(1);
-  const members = await fetchNormiesByFaction(factionName);
+  const members = getServerNormiesByFaction(factionName);
 
   if (members.length === 0) notFound();
 

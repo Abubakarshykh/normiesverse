@@ -1,3 +1,4 @@
+'use client';
 import { Hexagon, X, Code2, MessageCircle, Camera, Share2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import normiesData from '../../public/data/normies.json';

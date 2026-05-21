@@ -1,4 +1,5 @@
-import { fetchNormies, FACTION_COLORS, RARITY_ORDER } from '@/lib/api';
+import { getServerNormies } from '@/lib/data';
+import { FACTION_COLORS } from '@/lib/api';
 import Link from 'next/link';
 import { Trophy, Zap } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -14,8 +15,8 @@ const RARITY_COLORS: Record<string, string> = {
 
 const MEDAL: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
-export default async function LeaderboardPage() {
-  const normies = await fetchNormies();
+export default function LeaderboardPage() {
+  const normies = getServerNormies();
   const ranked = [...normies].sort((a, b) => b.powerLevel - a.powerLevel).slice(0, 50);
 
   return (
