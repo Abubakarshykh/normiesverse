@@ -148,7 +148,7 @@ export default function NormieGrid() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
       </div>
     );
@@ -167,7 +167,7 @@ export default function NormieGrid() {
   return (
     <div>
       <p className="mb-4 text-xs text-muted-foreground">{filteredNormies.length} Normies found</p>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {filteredNormies.map((normie, index) => (
           <TiltCard key={normie.id} normie={normie} index={index} />
         ))}

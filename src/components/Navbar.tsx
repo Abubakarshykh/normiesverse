@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Hexagon, LayoutGrid, BarChart3, Layers, Trophy, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Hexagon, LayoutGrid, BarChart3, Layers, Trophy, Search, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { useAppStore } from '@/lib/store';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { setSearchQuery } = useAppStore();
 
   const navLinks = [
@@ -39,8 +40,8 @@ export default function Navbar() {
 
         <div className="h-5 w-px bg-white/10" />
 
-        {/* Nav Links */}
-        <div className="flex items-center gap-1">
+        {/* Desktop Nav Links */}
+        <div className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => {
             const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
             const Icon = link.icon;
@@ -67,7 +68,12 @@ export default function Navbar() {
           })}
         </div>
 
-        <div className="h-5 w-px bg-white/10" />
+        {/* Mobile Toggle */}
+        <button className="md:hidden flex h-7 w-7 items-center justify-center rounded-full text-white" onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+
+        <div className="h-5 w-px bg-white/10 hidden md:block" />
 
         {/* Search Toggle */}
         <div className="flex items-center">
@@ -93,6 +99,25 @@ export default function Navbar() {
           )}
         </div>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-20 left-4 right-4 rounded-2xl bg-black/80 border border-primary/20 p-4 flex flex-col gap-2 md:hidden backdrop-blur-xl"
+          >
+            {navLinks.map((link) => (
+              <Link key={link.name} href={link.href} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 p-3 text-sm font-medium text-white hover:bg-primary/10 rounded-lg">
+                <link.icon className="h-4 w-4 text-primary" />
+                {link.name}
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }
