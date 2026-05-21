@@ -1,10 +1,17 @@
 export interface Normie {
   id: string;
   name: string;
+  faction: string;
+  rarity: 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary';
+  powerLevel: number;
   description: string;
   imageUrl: string;
-  model3DUrl?: string; // For 3D view
-  attributes: { trait_type: string; value: string }[];
+  traits: { trait_type: string; value: string }[];
+  persona: {
+    systemPrompt: string;
+    behavior: string;
+    previewText: string;
+  };
 }
 
 export interface AIPersona {
@@ -15,55 +22,51 @@ export interface AIPersona {
   previewText: string;
 }
 
-const API_BASE = 'https://api.normies.art';
-
-// Mock data as fallback
-const mockNormies: Normie[] = Array.from({ length: 20 }).map((_, i) => ({
-  id: `${i + 1}`,
-  name: `Normie #${i + 1}`,
-  description: `A unique cyberpunk retro Normie #${i + 1}`,
-  imageUrl: `https://api.dicebear.com/7.x/pixel-art/svg?seed=Normie${i + 1}`,
-  attributes: [
-    { trait_type: 'Background', value: 'Neon Space' },
-    { trait_type: 'Faction', value: i % 2 === 0 ? 'Cyber' : 'Retro' },
-  ],
-}));
+let cachedNormies: Normie[] | null = null;
 
 export async function fetchNormies(): Promise<Normie[]> {
+  if (cachedNormies) return cachedNormies;
   try {
-    const res = await fetch(`${API_BASE}/normies`);
-    if (!res.ok) throw new Error('API down');
-    return await res.json();
+    const res = await fetch('/data/normies.json', { cache: 'force-cache' });
+    if (!res.ok) throw new Error('Failed to load normies.json');
+    const data: Normie[] = await res.json();
+    cachedNormies = data;
+    return data;
   } catch (error) {
-    console.warn('Using mock data for normies');
-    return mockNormies;
+    console.error('Could not load normies.json', error);
+    return [];
   }
 }
 
 export async function fetchNormie(id: string): Promise<Normie | null> {
-  try {
-    const res = await fetch(`${API_BASE}/normies/${id}`);
-    if (!res.ok) throw new Error('API down');
-    return await res.json();
-  } catch (error) {
-    console.warn(`Using mock data for normie ${id}`);
-    return mockNormies.find((n) => n.id === id) || null;
-  }
+  const normies = await fetchNormies();
+  return normies.find((n) => n.id === id) ?? null;
+}
+
+export async function fetchNormiesByFaction(faction: string): Promise<Normie[]> {
+  const normies = await fetchNormies();
+  return normies.filter((n) => n.faction === faction);
 }
 
 export async function fetchPersonaPreview(id: string): Promise<AIPersona | null> {
-  try {
-    const res = await fetch(`${API_BASE}/agents/persona-preview/${id}`);
-    if (!res.ok) throw new Error('API down');
-    return await res.json();
-  } catch (error) {
-    console.warn(`Using mock data for persona ${id}`);
-    return {
-      id,
-      name: `Agent ${id}`,
-      systemPrompt: 'You are a cyberpunk rogue agent roaming the NormiesVerse.',
-      behavior: 'Sarcastic, insightful, slightly paranoid.',
-      previewText: 'Scanning the grid... Looks like we got company. Stay frosty.',
-    };
-  }
+  const normie = await fetchNormie(id);
+  if (!normie) return null;
+  return {
+    id: normie.id,
+    name: normie.name,
+    systemPrompt: normie.persona.systemPrompt,
+    behavior: normie.persona.behavior,
+    previewText: normie.persona.previewText,
+  };
 }
+
+export const FACTION_COLORS: Record<string, string> = {
+  Cyber: '#00ffff',
+  Retro: '#ff6600',
+  Void: '#9900ff',
+  Solar: '#ffcc00',
+  Glitch: '#00ff88',
+  Neon: '#ff0080',
+};
+
+export const RARITY_ORDER = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
